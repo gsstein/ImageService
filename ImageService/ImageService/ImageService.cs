@@ -75,16 +75,8 @@ namespace ImageService
             eventLog.WriteEntry(e.Message);
         }
 
-        /*
-        public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
-        {
-            // TODO: Insert monitoring activities here.  
-            eventLog.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventId++);
-        }
-        */
-
         // Create logging service and directory handler
-        protected override void OnStart(string[] args)
+        protected override void OnStart(string[] args) 
         {
             eventLog.WriteEntry("In OnStart");
 
@@ -98,6 +90,7 @@ namespace ImageService
             logging.MessageReceived += OnMessage;
 
             m_imageServer = new ImageServer(logging);
+            m_imageServer.Start();
 
             // Update the service state to Running.  
             serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
@@ -106,7 +99,7 @@ namespace ImageService
 
         protected override void OnStop()
         {
-            eventLog.WriteEntry("In onStop.");
+            eventLog.WriteEntry("In OnStop.");
         }
     }
 }

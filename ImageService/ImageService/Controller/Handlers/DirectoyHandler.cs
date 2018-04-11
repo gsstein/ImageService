@@ -29,6 +29,7 @@ namespace ImageService.Controller.Handlers
             m_logging = log;
             m_controller = controller;
         }
+
         // The Function Recieves the directory to Handle
         public void StartHandleDirectory(string dirPath)
         {
@@ -36,13 +37,12 @@ namespace ImageService.Controller.Handlers
                 dirPath += "\\";
             }
             m_path = dirPath;
-            const string DirPath = "C:\\Users\\Gavi Stein\\Desktop\\g\\";
-            if(!Directory.Exists(DirPath))
+
+            if (!Directory.Exists(dirPath))
             {
-                Directory.CreateDirectory(DirPath);
+                Directory.CreateDirectory(dirPath);
             }
 
-            System.IO.Directory.CreateDirectory("C:\\Users\\Gavi Stein\\Desktop\\g\\");
             m_path = dirPath;
             m_dirWatcher = new FileSystemWatcher(dirPath);
             m_dirWatcher.NotifyFilter = NotifyFilters.LastWrite
@@ -50,7 +50,7 @@ namespace ImageService.Controller.Handlers
             m_dirWatcher.Filter = "*.*";
             m_dirWatcher.Created += new FileSystemEventHandler(OnCreated);
             m_dirWatcher.EnableRaisingEvents = true;
-
+            m_logging.Log("watching " + dirPath, MessageTypeEnum.INFO);
         }
 
         private void OnCreated(object source, FileSystemEventArgs e)
