@@ -22,7 +22,6 @@ namespace ImageService.Server
     {
         private IImageController Controller;
         private ILoggingService Logging;
-        private string[] FoldersToWatch;
 
         public event EventHandler<CommandReceivedEventArgs> CommandReceived;          // The event that notifies about a new Command being received
 
@@ -34,21 +33,27 @@ namespace ImageService.Server
 
         public void Start()
         {
-            string handlers = ConfigurationManager.AppSettings["Handler"];
+            // Create controller from output directory and thumbnail size
             string outputDir = ConfigurationManager.AppSettings["OutputDir"];
             HideOutputDir(outputDir);
-
             int.TryParse(ConfigurationManager.AppSettings["ThumbnailSize"], out int thumbnailSize);
             Controller = new ImageController(new ImageServiceModal(outputDir, thumbnailSize));
-            FoldersToWatch = handlers.Split(';');
-            
-            foreach (string folder in FoldersToWatch)
+
+            // Create handler for each folder
+            string handlers = ConfigurationManager.AppSettings["Handler"];
+            string[] foldersToWatch = handlers.Split(';');
+            CreateHandlers(foldersToWatch);
+        }
+
+        private void CreateHandlers(string[] foldersToWatch)
+        {
+            foreach (string folder in foldersToWatch)
             {
                 DirectoyHandler handler = new DirectoyHandler(Logging, Controller);
-                CommandReceived += handler.OnCommandReceived;
+                CommandReceived += handler.OnCommandReceived; // When ImageServer sends a command the event will trigger each handler's OnCommandReceived
                 handler.StartHandleDirectory(folder);
             }
-        }
+        } 
 
         private void HideOutputDir(string dir)
         {

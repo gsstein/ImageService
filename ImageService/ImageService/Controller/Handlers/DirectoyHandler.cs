@@ -20,6 +20,8 @@ namespace ImageService.Controller.Handlers
         private FileSystemWatcher DirWatcher;             // The Watcher of the Dir
         private string DirPath;                              // The Path of directory
 
+        public event EventHandler<DirectoryCloseEventArgs> DirectoryClose;
+
         /*
          *  Watches the specified directory
          **/
@@ -27,6 +29,7 @@ namespace ImageService.Controller.Handlers
         {
             Logging = log;
             Controller = controller;
+            DirectoryClose += CloseDirectory;
         }
 
         // The Function Receives the directory to Handle
@@ -54,19 +57,13 @@ namespace ImageService.Controller.Handlers
                 Filter = "*.*"
             };
             DirWatcher.Created += new FileSystemEventHandler(OnCreated);
-
-            /* Add later
-            DirWatcher.Deleted += new FileSystemEventHandler(OnDeleted);
-            DirWatcher.Renamed += new FileSystemEventHandler(OnRenamed);
-            */
-
             DirWatcher.EnableRaisingEvents = true;
         }
 
         //Called when a new file is added
         private void OnCreated(object source, FileSystemEventArgs e)
         {
-            List<string> extensions = new List<string>() { ".jpg", ".png", ".gif", ".bmp" };
+            List<string> extensions = new List<string>() { ".jpg", ".png", ".gif", ".bmp", ".MOV" };
             
             string extension = Path.GetExtension(e.FullPath);
             if (!extensions.Contains(extension))
@@ -87,16 +84,14 @@ namespace ImageService.Controller.Handlers
             }
         }
 
-        private void OnDeleted(object source, FileSystemEventArgs e) {/*TODO*/}
-
-        private void OnRenamed(object source, FileSystemEventArgs e) {/*TODO*/}
-
         // The Event that will be activated upon new Command
         public void OnCommandReceived(object sender, CommandReceivedEventArgs e)
         {
+            Logging.Log("Command received: " + e.CommandID.ToString(), MessageTypeEnum.INFO);
             if (e.CommandID.Equals(CommandEnum.Close))
             {
-                CloseDirectory();
+                DirectoryCloseEventArgs args = new DirectoryCloseEventArgs(DirPath, "Closed " + DirPath);
+                OnDirectoryClose(args);
             }
             else
             {
@@ -104,10 +99,19 @@ namespace ImageService.Controller.Handlers
             }
         }
 
-        private void CloseDirectory()
+        private void CloseDirectory(object sender, DirectoryCloseEventArgs e)
         {
             DirWatcher.EnableRaisingEvents = false;
-            Logging.Log("Closed " + DirPath, MessageTypeEnum.INFO);
+            Logging.Log(e.Message, MessageTypeEnum.INFO);
+        }
+
+        protected virtual void OnDirectoryClose(DirectoryCloseEventArgs e)
+        {
+            EventHandler<DirectoryCloseEventArgs> handler = DirectoryClose;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
         }
     }
 }

@@ -21,6 +21,7 @@ namespace ImageService
 
         private ImageServer ImageServer;          // The Image Server
         private ILoggingService Logging;
+        private ServiceStatus Status;
 
         public ImageService(string[] args)
         {
@@ -45,24 +46,30 @@ namespace ImageService
         protected override void OnStart(string[] args)
         {
             // Update the service state to Start Pending.  
-            ServiceStatus serviceStatus = new ServiceStatus
+            Status = new ServiceStatus
             {
                 dwCurrentState = ServiceState.SERVICE_START_PENDING,
                 dwWaitHint = 100000
             };
-            SetServiceStatus(this.ServiceHandle, ref serviceStatus);
-
-            eventLog.WriteEntry("Service started");
+            SetServiceStatus(this.ServiceHandle, ref Status);
+            LogStatus();
 
             Logging = new LoggingService();
             Logging.MessageReceived += OnMessage;
-
             ImageServer = new ImageServer(Logging);
-            ImageServer.Start();
 
             // Update the service state to Running.  
-            serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
-            SetServiceStatus(this.ServiceHandle, ref serviceStatus);
+            Status.dwCurrentState = ServiceState.SERVICE_RUNNING;
+            SetServiceStatus(this.ServiceHandle, ref Status);
+            LogStatus();
+
+            // Start Server
+            ImageServer.Start();
+        }
+
+        private void LogStatus()
+        {
+            eventLog.WriteEntry(Status.dwCurrentState.ToString());
         }
 
         /// <summary>
@@ -77,8 +84,9 @@ namespace ImageService
 
         protected override void OnStop()
         {
-            eventLog.WriteEntry("Service ending");
             ImageServer.Stop();
+            Status.dwCurrentState = ServiceState.SERVICE_STOPPED;
+            LogStatus();
         }
     }
 

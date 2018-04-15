@@ -16,7 +16,7 @@ namespace ImageService.Modal
         private string ThumbnailFolder;
         private int ThumbnailSize;              // The Size Of The Thumbnail Size
         private static Regex r = new Regex(":");
-        private string Date;
+        private string Date;                    // The date path (\year\month)
 
         public ImageServiceModal(string outputFolder, int thumbnailSize)
         {
@@ -41,6 +41,9 @@ namespace ImageService.Modal
             CreateFolder(ThumbnailFolder);
         }
 
+        /**
+         * From https://stackoverflow.com/questions/180030/how-can-i-find-out-when-a-picture-was-actually-taken-in-c-sharp-running-on-vista 
+         **/
         public static DateTime GetDateTakenFromImage(string path)
         {
             using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
@@ -58,6 +61,9 @@ namespace ImageService.Modal
             CreateFolder(ThumbnailFolder + Date);
         }
 
+        /**
+         * From https://stackoverflow.com/questions/2808887/create-thumbnail-image
+         * */
         private void CreateThumbnail(string path)
         {
             Image image = Image.FromFile(path);
@@ -67,6 +73,12 @@ namespace ImageService.Modal
 
         public string AddFile(string path, out bool result)
         {
+            FileInfo fi = new FileInfo(path);
+            while (FileIsLocked(fi))
+            {
+                // Wait while file is in use
+            }
+
             result = false;
 
             if (File.Exists(path))
@@ -89,7 +101,7 @@ namespace ImageService.Modal
                 return newPath;
             }
 
-            return "File does not exist";
+            return path + " does not exist";
         }
 
         public void CreateFolder(string path)
@@ -98,6 +110,29 @@ namespace ImageService.Modal
             {
                 Directory.CreateDirectory(path);
             }
+        }
+
+        /**
+         * From https://stackoverflow.com/questions/10982104/wait-until-file-is-completely-written
+         * */
+        private bool FileIsLocked(FileInfo file)
+        {
+            FileStream stream = null;
+
+            try
+            {
+                stream = file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                return true;
+            }
+            finally
+            {
+                if (stream != null)
+                    stream.Close();
+            }
+            return false;
         }
     }
 }
