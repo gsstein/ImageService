@@ -78,7 +78,7 @@ namespace ImageService.Modal
                     Date = dt.Year + "\\" + dt.Month + "\\";
                     CreateDateDirectory(dt);
                     newPath += OutputFolder + Date + Path.GetFileName(path);
-                    File.Copy(path, newPath, true);
+                    File.Move(path, newPath);
                     CreateThumbnail(newPath);
                 }
                 catch (Exception e)

@@ -34,18 +34,18 @@ namespace ImageService.Server
 
         public void Start()
         {
-            int thumbnailSize;
             string handlers = ConfigurationManager.AppSettings["Handler"];
             string outputDir = ConfigurationManager.AppSettings["OutputDir"];
             HideOutputDir(outputDir);
 
-            int.TryParse(ConfigurationManager.AppSettings["ThumbnailSize"], out thumbnailSize);
+            int.TryParse(ConfigurationManager.AppSettings["ThumbnailSize"], out int thumbnailSize);
             Controller = new ImageController(new ImageServiceModal(outputDir, thumbnailSize));
             FoldersToWatch = handlers.Split(';');
             
             foreach (string folder in FoldersToWatch)
             {
                 DirectoyHandler handler = new DirectoyHandler(Logging, Controller);
+                CommandReceived += handler.OnCommandReceived;
                 handler.StartHandleDirectory(folder);
             }
         }

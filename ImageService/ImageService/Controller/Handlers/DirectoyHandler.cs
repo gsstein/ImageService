@@ -47,10 +47,12 @@ namespace ImageService.Controller.Handlers
 
         private void InitializeFileWatcher()
         {
-            DirWatcher = new FileSystemWatcher(DirPath);
-            DirWatcher.NotifyFilter = NotifyFilters.LastWrite
-           | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            DirWatcher.Filter = "*.*";
+            DirWatcher = new FileSystemWatcher(DirPath)
+            {
+                NotifyFilter = NotifyFilters.LastWrite
+           | NotifyFilters.FileName | NotifyFilters.DirectoryName,
+                Filter = "*.*"
+            };
             DirWatcher.Created += new FileSystemEventHandler(OnCreated);
 
             /* Add later
@@ -78,22 +80,16 @@ namespace ImageService.Controller.Handlers
 
             if (result)
             {
-                Logging.Log(e.Name + " copied to " + DirPath, MessageTypeEnum.INFO);
+                Logging.Log(e.Name + " moved to " + DirPath, MessageTypeEnum.INFO);
             } else
             {
-                Logging.Log(e.Name + " failed to copy to " + DirPath + ": " + info, MessageTypeEnum.FAIL);
+                Logging.Log(e.Name + " failed to move to " + DirPath + ": " + info, MessageTypeEnum.FAIL);
             }
         }
 
-        private void OnDeleted(object source, FileSystemEventArgs e)
-        {
-            /*TODO*/
-        }
+        private void OnDeleted(object source, FileSystemEventArgs e) {/*TODO*/}
 
-        private void OnRenamed(object source, FileSystemEventArgs e)
-        {
-            /*TODO*/
-        }
+        private void OnRenamed(object source, FileSystemEventArgs e) {/*TODO*/}
 
         // The Event that will be activated upon new Command
         public void OnCommandReceived(object sender, CommandReceivedEventArgs e)
@@ -111,7 +107,7 @@ namespace ImageService.Controller.Handlers
         private void CloseDirectory()
         {
             DirWatcher.EnableRaisingEvents = false;
-            Logging.Log(DirPath + " closed", MessageTypeEnum.INFO);
+            Logging.Log("Closed " + DirPath, MessageTypeEnum.INFO);
         }
     }
 }
