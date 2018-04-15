@@ -12,22 +12,22 @@ namespace ImageService.Controller
 {
     public class ImageController : IImageController
     {
-        private IImageServiceModal m_modal;                      // The Modal Object
-        private Dictionary<CommandEnum, ICommand> commands;
+        private IImageServiceModal Modal;                      // The Modal Object
+        private Dictionary<CommandEnum, ICommand> Commands;
 
         public ImageController(IImageServiceModal modal)
         {
-            m_modal = modal;                    // Storing the Modal Of The System
-            commands = new Dictionary<CommandEnum, ICommand>()
+            Modal = modal;                    // Storing the Modal Of The System
+            Commands = new Dictionary<CommandEnum, ICommand>()
             {
-                { CommandEnum.NewFile, new NewFileCommand(modal) }
+                { CommandEnum.NewFile, new NewFileCommand(Modal) }
             };
         }
 
         public string ExecuteCommand(CommandEnum commandID, string[] args, out bool resultSuccesful)
         {
             ICommand value;
-            commands.TryGetValue(commandID, out value);
+            Commands.TryGetValue(commandID, out value);
             return value.Execute(args, out resultSuccesful);
         }
     }

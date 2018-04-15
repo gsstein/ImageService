@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ImageService.Commands;
 using System.Configuration;
+using System.IO;
 
 namespace ImageService.Server
 {
@@ -19,49 +20,66 @@ namespace ImageService.Server
      */
     public class ImageServer
     {
-        #region Members
-        private IImageController m_controller;
-        private ILoggingService m_logging;
-        private IDictionary<CommandEnum, ICommand> m_commands;
-        private string outputFolder;
-        private string[] foldersToWatch;
-    
-        #endregion
+        private IImageController Controller;
+        private ILoggingService Logging;
+        private string[] FoldersToWatch;
 
-        #region Properties
-        public event EventHandler<CommandReceivedEventArgs> CommandReceived;          // The event that notifies about a new Command being recieved
-        #endregion
+        public event EventHandler<CommandReceivedEventArgs> CommandReceived;          // The event that notifies about a new Command being received
 
         public ImageServer(ILoggingService logger)
         {
-            m_logging = logger;
+            Logging = logger;
         }
+
 
         public void Start()
         {
-            int.TryParse(ConfigurationManager.AppSettings["ThumbnailSize"], out int thumbnailSize);
-            m_controller = new ImageController(new ImageServiceModal(ConfigurationManager.AppSettings["OutputDir"], thumbnailSize));
-            string str = ConfigurationManager.AppSettings["Handler"];
-            String[] foldersToWatch = str.Split(';');
+            int thumbnailSize;
+            string handlers = ConfigurationManager.AppSettings["Handler"];
+            string outputDir = ConfigurationManager.AppSettings["OutputDir"];
+            HideOutputDir(outputDir);
 
-            foreach (string folder in foldersToWatch)
+            int.TryParse(ConfigurationManager.AppSettings["ThumbnailSize"], out thumbnailSize);
+            Controller = new ImageController(new ImageServiceModal(outputDir, thumbnailSize));
+            FoldersToWatch = handlers.Split(';');
+            
+            foreach (string folder in FoldersToWatch)
             {
-                DirectoyHandler handler = new DirectoyHandler(m_logging, m_controller);
+                DirectoyHandler handler = new DirectoyHandler(Logging, Controller);
                 handler.StartHandleDirectory(folder);
             }
         }
 
+        private void HideOutputDir(string dir)
+        {
+            DirectoryInfo di;
+            if (!Directory.Exists(dir))
+            {
+                di = Directory.CreateDirectory(dir);
+            }
+            else
+            {
+                di = new DirectoryInfo(dir);
+            }
+            di.Attributes = FileAttributes.Directory | FileAttributes.Hidden;
+        }
+
+        public void Stop()
+        {
+            //Sends the CLOSE command
+            CommandReceivedEventArgs args = new CommandReceivedEventArgs(CommandEnum.Close, null, "");
+            OnCommandReceived(args);
+        }
+
+
         protected virtual void OnCommandReceived(CommandReceivedEventArgs e)
         {
-            CommandReceived(this, e);
             EventHandler<CommandReceivedEventArgs> handler = CommandReceived;
             if (handler != null)
             {
                 handler(this, e);
             }
-            
         }
-
 
     }
 }

@@ -12,9 +12,9 @@ using ImageService.Infrastructure;
 using System.IO;
 
 
-namespace ImageService
+namespace MyNewService
 {
-    public partial class ImageService : ServiceBase
+    public partial class MyNewService : ServiceBase
     {
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
@@ -22,7 +22,7 @@ namespace ImageService
         private ImageServer ImageServer;          // The Image Server
         private ILoggingService Logging;
 
-        public ImageService(string[] args)
+        public MyNewService(string[] args)
         {
             InitializeComponent();
             string eventSourceName = ConfigurationManager.AppSettings["SourceName"];

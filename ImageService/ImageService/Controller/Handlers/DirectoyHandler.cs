@@ -15,44 +15,53 @@ namespace ImageService.Controller.Handlers
 {
     public class DirectoyHandler : IDirectoryHandler
     {
-      //  #region Members
-        private IImageController m_controller;              // The Image Processing Controller
-        private ILoggingService m_logging;
-        private FileSystemWatcher m_dirWatcher;             // The Watcher of the Dir
-        private string m_path;                              // The Path of directory
-     //   #endregion
+        private IImageController Controller;              // The Image Processing Controller
+        private ILoggingService Logging;
+        private FileSystemWatcher DirWatcher;             // The Watcher of the Dir
+        private string DirPath;                              // The Path of directory
 
-        public event EventHandler<DirectoryCloseEventArgs> DirectoryClose;              // The Event That Notifies that the Directory is being closed
-
+        /*
+         *  Watches the specified directory
+         **/
         public DirectoyHandler(ILoggingService log, IImageController controller)
         {
-            m_logging = log;
-            m_controller = controller;
+            Logging = log;
+            Controller = controller;
         }
 
-        // The Function Recieves the directory to Handle
+        // The Function Receives the directory to Handle
         public void StartHandleDirectory(string dirPath)
         {
             if (!dirPath.EndsWith("\\")) {
                 dirPath += "\\";
             }
-            m_path = dirPath;
 
             if (!Directory.Exists(dirPath))
             {
                 Directory.CreateDirectory(dirPath);
             }
 
-            m_path = dirPath;
-            m_dirWatcher = new FileSystemWatcher(dirPath);
-            m_dirWatcher.NotifyFilter = NotifyFilters.LastWrite
-           | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            m_dirWatcher.Filter = "*.*";
-            m_dirWatcher.Created += new FileSystemEventHandler(OnCreated);
-            m_dirWatcher.EnableRaisingEvents = true;
-            m_logging.Log("watching " + dirPath, MessageTypeEnum.INFO);
+            DirPath = dirPath;
+            InitializeFileWatcher();
         }
 
+        private void InitializeFileWatcher()
+        {
+            DirWatcher = new FileSystemWatcher(DirPath);
+            DirWatcher.NotifyFilter = NotifyFilters.LastWrite
+           | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            DirWatcher.Filter = "*.*";
+            DirWatcher.Created += new FileSystemEventHandler(OnCreated);
+
+            /* Add later
+            DirWatcher.Deleted += new FileSystemEventHandler(OnDeleted);
+            DirWatcher.Renamed += new FileSystemEventHandler(OnRenamed);
+            */
+
+            DirWatcher.EnableRaisingEvents = true;
+        }
+
+        //Called when a new file is added
         private void OnCreated(object source, FileSystemEventArgs e)
         {
             List<string> extensions = new List<string>() { ".jpg", ".png", ".gif", ".bmp" };
@@ -62,33 +71,47 @@ namespace ImageService.Controller.Handlers
             {
                 return;
             }
-            m_logging.Log(e.Name + " was added to " + m_path, MessageTypeEnum.INFO);
-            
+
+            Logging.Log(e.Name + " was added to " + DirPath, MessageTypeEnum.INFO);
             string[] args = { e.FullPath };
+            string info = Controller.ExecuteCommand(CommandEnum.NewFile, args, out bool result);
 
-            string info = m_controller.ExecuteCommand(CommandEnum.NewFile, args, out bool result);
-            m_logging.Log(info, MessageTypeEnum.INFO);
-
-            if(result == true)
+            if (result)
             {
-                m_logging.Log(e.Name + " copied to ", MessageTypeEnum.FAIL);
-            } else if(result == false)
+                Logging.Log(e.Name + " copied to " + DirPath, MessageTypeEnum.INFO);
+            } else
             {
-                m_logging.Log(e.Name + " failed to copy to ", MessageTypeEnum.INFO);
+                Logging.Log(e.Name + " failed to copy to " + DirPath + ": " + info, MessageTypeEnum.FAIL);
             }
-            
+        }
+
+        private void OnDeleted(object source, FileSystemEventArgs e)
+        {
+            /*TODO*/
+        }
+
+        private void OnRenamed(object source, FileSystemEventArgs e)
+        {
+            /*TODO*/
         }
 
         // The Event that will be activated upon new Command
-        public void OnCommandRecieved(object sender, CommandReceivedEventArgs e)
+        public void OnCommandReceived(object sender, CommandReceivedEventArgs e)
         {
-            if(e.CommandID.Equals(CommandEnum.Close))
+            if (e.CommandID.Equals(CommandEnum.Close))
             {
-                m_dirWatcher.Dispose();
-                DirectoryCloseEventArgs args = new DirectoryCloseEventArgs(m_path, m_path + "closed");
-                DirectoryClose.Invoke(sender, args);
+                CloseDirectory();
             }
-            m_controller.ExecuteCommand(e.CommandID, e.Args, out bool result);
+            else
+            {
+                Controller.ExecuteCommand(e.CommandID, e.Args, out bool result);
+            }
+        }
+
+        private void CloseDirectory()
+        {
+            DirWatcher.EnableRaisingEvents = false;
+            Logging.Log(DirPath + " closed", MessageTypeEnum.INFO);
         }
     }
 }

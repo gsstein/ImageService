@@ -1,4 +1,4 @@
-﻿namespace ImageService
+﻿namespace MyNewService
 {
     partial class ProjectInstaller
     {
@@ -39,8 +39,8 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.Description = "An Image Service";
-            this.serviceInstaller1.ServiceName = "ImageService";
+            this.serviceInstaller1.DisplayName = "Image Service";
+            this.serviceInstaller1.ServiceName = "ImageService1";
             this.serviceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller

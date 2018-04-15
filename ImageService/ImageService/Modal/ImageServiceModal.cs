@@ -1,31 +1,29 @@
-﻿//using ImageService.Infrastructure;
+﻿using ImageService.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-//using System.Drawing.Imaging;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace ImageService.Modal
 {
     public class ImageServiceModal : IImageServiceModal
     {
-        #region Members
-        private string m_OutputFolder;            // The Output Folder
-        private int m_thumbnailSize;              // The Size Of The Thumbnail Size
+        private string OutputFolder;            // The Output Folder
+        private string ThumbnailFolder;
+        private int ThumbnailSize;              // The Size Of The Thumbnail Size
+        private static Regex r = new Regex(":");
+        private string Date;
 
-        #endregion
-
-        public ImageServiceModal(string OutputFolder, int thumbnailSize)
+        public ImageServiceModal(string outputFolder, int thumbnailSize)
         {
-            m_OutputFolder = OutputFolder;
-            m_OutputFolder = AddBackslash(m_OutputFolder);
-            m_thumbnailSize = thumbnailSize;
-            CreateThumbNailFolder();
+            OutputFolder = outputFolder;
+            OutputFolder = AddBackslash(OutputFolder);
+            ThumbnailSize = thumbnailSize;
+            CreateThumbnailFolder();
         }
 
         private string AddBackslash(string folder)
@@ -37,10 +35,10 @@ namespace ImageService.Modal
             return folder;
         }
 
-        private void CreateThumbNailFolder()
+        private void CreateThumbnailFolder()
         {
-            m_thumbnailFolder = m_OutputFolder + "Thumbnails\\";
-            CreateFolder(m_thumbnailFolder);
+            ThumbnailFolder = OutputFolder + "Thumbnails\\";
+            CreateFolder(ThumbnailFolder);
         }
 
         public static DateTime GetDateTakenFromImage(string path)
@@ -56,40 +54,32 @@ namespace ImageService.Modal
 
         private void CreateDateDirectory(DateTime dt)
         {
-            CreateFolder(m_OutputFolder + date);
-            CreateFolder(m_thumbnailFolder + date);
+            CreateFolder(OutputFolder + Date);
+            CreateFolder(ThumbnailFolder + Date);
         }
 
-        private void CreateThumbNail(string path)
+        private void CreateThumbnail(string path)
         {
             Image image = Image.FromFile(path);
             Image thumb = image.GetThumbnailImage(120, 120, () => false, IntPtr.Zero);
-            thumb.Save(Path.ChangeExtension(m_thumbnailFolder + date + Path.GetFileName(path), "thumb"));
-        }
-
-        public void CreateFolder(string path)
-        {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
+            thumb.Save(Path.ChangeExtension(ThumbnailFolder + Date + Path.GetFileName(path), "thumb"));
         }
 
         public string AddFile(string path, out bool result)
         {
             result = false;
 
-            if(File.Exists(path))
+            if (File.Exists(path))
             {
                 string newPath = "";
                 try
                 {
                     DateTime dt = GetDateTakenFromImage(path);
-                    date = dt.Year + "\\" + dt.Month + "\\";
+                    Date = dt.Year + "\\" + dt.Month + "\\";
                     CreateDateDirectory(dt);
-                    newPath += m_OutputFolder + date + Path.GetFileName(path);
+                    newPath += OutputFolder + Date + Path.GetFileName(path);
                     File.Copy(path, newPath, true);
-                    CreateThumbNail(newPath);
+                    CreateThumbnail(newPath);
                 }
                 catch (Exception e)
                 {
@@ -100,6 +90,14 @@ namespace ImageService.Modal
             }
 
             return "File does not exist";
+        }
+
+        public void CreateFolder(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
         }
     }
 }
